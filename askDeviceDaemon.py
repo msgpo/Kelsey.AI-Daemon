@@ -11,6 +11,12 @@ from websocket import create_connection
 import json
 import webbrowser
 from contextlib import contextmanager
+from adapt.entity_tagger import EntityTagger
+from adapt.tools.text.tokenizer import EnglishTokenizer
+from adapt.tools.text.trie import Trie
+from adapt.intent import IntentBuilder
+from adapt.parser import Parser
+from adapt.engine import IntentDeterminationEngine
 
 URL_TEMPLATE = "{scheme}://{host}:{port}{path}"
 UDP_IP = "192.168.0.10"  # this should be the ip address of the device that the client, this software,  is running on
