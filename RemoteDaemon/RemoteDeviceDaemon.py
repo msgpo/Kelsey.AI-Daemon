@@ -10,12 +10,7 @@ import threading
 from websocket import create_connection
 import json
 import webbrowser
-from contextlib import contextmanager
-from adapt.entity_tagger import EntityTagger
-from adapt.tools.text.tokenizer import EnglishTokenizer
-from adapt.tools.text.trie import Trie
 from adapt.intent import IntentBuilder
-from adapt.parser import Parser
 from adapt.engine import IntentDeterminationEngine
 
 URL_TEMPLATE = "{scheme}://{host}:{port}{path}"
@@ -29,11 +24,7 @@ URL_AIR1 = 'https://tunein.com/radio/Air1-Radio-907-s33843/'
 URL_NATIONAL_RADAR = 'http://www.intellicast.com/National/Radar/Current.aspx?animate=true'
 URL_REGIONAL_RADAR = 'http://www.intellicast.com/Local/WxMap.aspx?latitude=44.26&longitude=-85.4&' \
                      'zoomLevel=8&opacity=1&basemap=0014&layers=0039'
-
 CHROME_PATH = '/usr/bin/google-chrome %s'
-
-os.system('clear')
-
 sock = socket.socket(socket.AF_INET,  # Internet
                      socket.SOCK_DGRAM)  # UDP
 sock.bind((UDP_IP, UDP_PORT))
@@ -45,6 +36,7 @@ class MyEvent:
     idThread = threading.Thread
 
 
+# Sends a response back to the mycroft device
 def send_message(message, host="192.168.0.41", port=8181, path="/core", scheme="ws"):
     payload = json.dumps({
         "type": "recognizer_loop:utterance",
@@ -59,19 +51,41 @@ def send_message(message, host="192.168.0.41", port=8181, path="/core", scheme="
     ws.close()
 
 
+# Reads keywords for Adapt-parser
+def parse_keyword(keyword_file):
+    start_path = sys.path[0]
+    keyword_path = '/vocab/en-us/'
+    fname = start_path + keyword_path + keyword_file +'.voc'
+    with open(fname) as f:
+        content = f.readlines()
+    # you may also want to remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    print(content)
+    return content
+
+
+def __initialize__():
+    engine = IntentDeterminationEngine()
+    launch_keyword = parse_keyword('LaunchKeyword')
+    for lk in launch_keyword:
+        engine.register_entity(lk, "LaunchKeyword")
+    launch_intent = IntentBuilder("LaunchIntent") \
+        .require("LaunchKeyword") \
+        .build()
+    engine.register_intent_parser(launch_intent)
+
+    play_keyword = parse_keyword('PlayKeyword')
+    for pk in play_keyword:
+        engine.register_entity(pk, "PlayKeyword")
+    play_intent = IntentBuilder("PlayIntent") \
+        .require("PlayKeyword") \
+        .build()
+    engine.register_intent_parser(play_intent)
+
+
 # Sets Roof Lights to minimum Dimming
 def do_launch_web_url(id, stop, my_url):
     webbrowser.get(CHROME_PATH).open(my_url)
-
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:
-            yield
-        finally:
-            sys.stdout = old_stdout
 
 
 def do_events():
@@ -97,10 +111,11 @@ def do_events():
             launch_this.idThread = threading.Thread(target=do_launch_web_url,
                                                     args=(launch_this.id, lambda: launch_this.idStop, launch_url))
             launch_this.idThread.start()
-        if "STOP" in strData:
+        if "stop" in strData:
             launch_this.idStop = True
             launch_this.idThread.join()
 
 
-do_events()
-
+# do_events()
+load_keyword('LaunchKeyword')
+load_keyword('PlayKeyword')

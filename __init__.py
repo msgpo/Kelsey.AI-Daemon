@@ -1,17 +1,5 @@
 #!/usr/bin/env python
 
-# Copyright 2017 Willem Ligtenberg
-#
-# Coin flip skill is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Coin flip skill is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
 # You should have received a copy of the GNU General Public License
 # along with Mycroft Core.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -51,7 +39,8 @@ class AskDeviceSkill(MycroftSkill):
         self.load_data_files(dirname(__file__))
 
         ask_device_intent = IntentBuilder("AskDeviceIntent").\
-            require("AskKeyword").require("DeviceKeyword").build()
+            require("AskKeyword").optionally('TheKeyword').\
+            require("DeviceKeyword").optionally('ToKeyword').build()
         self.register_intent(ask_device_intent, self.handle_ask_device_intent)
 
     # The "handle_xxxx_intent" functions define Mycroft's behavior when
